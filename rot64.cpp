@@ -124,7 +124,7 @@ static string rotN(int n, string str) {
     int stringLen = str.size();
     for (int i = 0; i < stringLen; i++) {
         if (output[i] + n > 126) {
-            // If the value is too high, wrap around to ASCII 33 ("!")
+            // If the value is too high, wrap around to ASCII 32 (" ")
             output[i] = output[i] + n - 94;
         } else if (output[i] + n < 32) {
             // If the value is too low (for reverse rotations), wrap around to ASCII 126 ("~")
@@ -146,6 +146,26 @@ static string rot64Encrypt(int rotations, string msg) {
     return ciphertext;
 }
 
+static string rot64Encrypt(int rotations, string key, string msg) {
+	string ciphertext = msg;
+	int keyLen = key.size();
+	int msgLen = msg.size();
+	
+	if (keyLen < msgLen) {
+		for(int i=keyLen-1; i < msgLen; i++) {
+			int x = 0;
+			key += key[x];
+			x++;
+		}
+	}
+
+	for (int i=0; i < msgLen; i++) {
+		string r = rotN(key[i], ciphertext);
+		ciphertext = base64_encode(reinterpret_cast<const unsigned char*>(r.c_str()), r.length());
+    }
+	return ciphertext;
+}
+
 static string rot64Decrypt(int rotations, string cipher) {
     string plaintext = cipher;
     for (int i = 0; i < rotations; i++) {
@@ -155,16 +175,37 @@ static string rot64Decrypt(int rotations, string cipher) {
     return plaintext;
 }
 
+static string rot64Decrypt(int rotations, string key, string cipher) {
+	string plaintext = cipher;
+	int keyLen = key.size();                                int msgLen = cipher.size();
+                                                                if (keyLen < msgLen) {
+                for(int i=keyLen-1; i < msgLen; i++) {
+                        int x = 0;
+                        key += key[x];
+                        x++;
+                }                                               }
+								int x = key.size() - 1;
+								for (int i = 0; i < rotations; i++) {				int y = key[x] * -1;
+		plaintext = base64_decode(plaintext);                   plaintext = rotN(y, plaintext);
+		x--;
+    }                                                       return plaintext;
+}
+
 int main() {
     // EXAMPLE RUN:
     int rotations = 5;
 
     string message = "Hi friend";
     string ciphertext = rot64Encrypt(rotations, message);
+    string key = "key";
+    string keyedcipher = rot64Encrypt(rotations, key, message);
 
     cout << "Initial message:" << message << endl
          << "Encrypted: " << ciphertext << endl
-         << "Decrypted: " << rot64Decrypt(rotations, ciphertext) << endl;
+         << "Decrypted: " << rot64Decrypt(rotations, ciphertext) << endl << endl;
+
+    cout << "Key encrypted: " << keyedcipher << endl
+	    << "Key decrypted: " << rot64Decrypt(rotations, key, ciphertext) << endl;
 
     return 0;
 }
